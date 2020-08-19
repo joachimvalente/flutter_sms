@@ -54,6 +54,7 @@ class ContactPhotoQuery {
 
 /// A contact of yours
 class Contact {
+  String _id;
   String _fullName;
   String _firstName;
   String _lastName;
@@ -62,12 +63,14 @@ class Contact {
   Photo _photo;
 
   Contact(String address,
-      {String firstName,
+      {String id,
+      String firstName,
       String lastName,
       String fullName,
       Photo thumbnail,
       Photo photo}) {
     this._address = address;
+    this._id = id;
     this._firstName = firstName;
     this._lastName = lastName;
     if (fullName == null) {
@@ -82,6 +85,9 @@ class Contact {
   Contact.fromJson(String address, Map data) {
     this._address = address;
     if (data == null) return;
+    if (data.containsKey("id")) {
+      this._id = data["id"];
+    }
     if (data.containsKey("first")) {
       this._firstName = data["first"];
     }
@@ -98,6 +104,8 @@ class Contact {
       this._thumbnail = new Photo(Uri.parse(data["thumbnail"]));
     }
   }
+
+  String get id => this._id;
 
   /// Gets the full name of the [Contact]
   String get fullName => this._fullName;

@@ -47,6 +47,7 @@ class ContactQueryHandler implements RequestPermissionsResultListener {
         Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(this.contactAddress));
 
         String[] projection = new String[]{
+                ContactsContract.PhoneLookup.CONTACT_ID,
                 ContactsContract.PhoneLookup.DISPLAY_NAME,
                 ContactsContract.PhoneLookup.PHOTO_URI,
                 ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
@@ -56,9 +57,10 @@ class ContactQueryHandler implements RequestPermissionsResultListener {
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 try {
-                    obj.put("name", cursor.getString(0));
-                    obj.put("photo", cursor.getString(1));
-                    obj.put("thumbnail", cursor.getString(2));
+                    obj.put("id", cursor.getString(0));
+                    obj.put("name", cursor.getString(1));
+                    obj.put("photo", cursor.getString(2));
+                    obj.put("thumbnail", cursor.getString(3));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
