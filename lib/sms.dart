@@ -402,6 +402,7 @@ class SmsUpdater {
     var map = Map();
     map['messageId'] = msg.id;
 
+    print('Trying to update ${msg.id}');
     await _channel.invokeMethod("updateSMS", map);
   }
 }

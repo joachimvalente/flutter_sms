@@ -9,6 +9,7 @@ import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import com.babariviere.sms.permisions.Permissions;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -34,35 +35,44 @@ class SmsUpdater implements RequestPermissionsResultListener {
     MethodChannel.Result result,
     String messageId
   ) {
+    Log.i("TOTO", "A");
     this.registrar = registrar;
     this.result = result;
     this.messageId = messageId;
   }
 
   void handleMarkMessageRead(Permissions permissions) {
+    Log.i("TOTO", "B");
     if (
       permissions.checkAndRequestPermission(
         permissionsList,
         Permissions.SEND_SMS_ID_REQ
       )
     ) {
+      Log.i("TOTO", "C");
       markMessageRead();
     }
   }
 
   private void markMessageRead() {
-    ContentValues values = new ContentValues();
-    values.put("read", true);
-    registrar
-      .context()
-      .getContentResolver()
-      .update(
-        Uri.parse("content://sms/inbox"),
-        values,
-        "_id=" + messageId,
-        null
-      );
-    result.success(null);
+    Log.i("TOTO", "D");
+    try {
+      ContentValues values = new ContentValues();
+      values.put("read", true);
+      registrar
+        .context()
+        .getContentResolver()
+        .update(
+          Uri.parse("content://sms/inbox"),
+          values,
+          "_id=" + messageId,
+          null
+        );
+      result.success(null);
+    } catch (Exception e) {
+      Log.e("Mark Read", "Error in Read: " + e.toString());
+      result.error("#99", "error in Mark Read" + e.toString(), null);
+    }
   }
 
   @Override
