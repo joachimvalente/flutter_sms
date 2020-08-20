@@ -72,13 +72,13 @@ public class SmsPlugin {
     querySmsChannel.setMethodCallHandler(query);
 
     /// SMS updater
-    final SmsUpdate query = new SmsUpdate(registrar);
+    final SmsUpdate update = new SmsUpdate(registrar);
     final MethodChannel smsUpdateChannel = new MethodChannel(
       registrar.messenger(),
       CHANNEL_UPDATE,
       JSONMethodCodec.INSTANCE
     );
-    smsUpdateChannel.setMethodCallHandler(query);
+    smsUpdateChannel.setMethodCallHandler(update);
 
     /// Contact query
     final ContactQuery contactQuery = new ContactQuery(registrar);

@@ -5,6 +5,7 @@ import static io.flutter.plugin.common.MethodChannel.Result;
 import static io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -110,6 +111,6 @@ class SmsUpdate implements MethodCallHandler {
     }
     SmsUpdater handler = new SmsUpdater(registrar, result, messageId);
     this.registrar.addRequestPermissionsResultListener(handler);
-    handler.handle(permissions);
+    handler.handleMarkMessageRead(permissions);
   }
 }
