@@ -131,7 +131,10 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
         if (threadId >= 0 && obj.getInt("thread_id") != threadId) {
           continue;
         }
-        if (address != null && !obj.getString("address").equals(address)) {
+        if (
+          address != null &&
+          (obj.isNull("address") || !obj.getString("address").equals(address))
+        ) {
           continue;
         }
       } catch (JSONException e) {
