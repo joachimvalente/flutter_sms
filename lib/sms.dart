@@ -276,7 +276,7 @@ class SmsReceiver {
   /// Create a stream that collect received SMS
   Stream<SmsMessage> get onSmsReceived {
     if (_onSmsReceived == null) {
-      print("Creating sms receiver");
+      // print("Creating sms receiver");
       _onSmsReceived = _channel.receiveBroadcastStream().map((dynamic event) {
         SmsMessage msg = new SmsMessage.fromJson(event);
         msg.kind = SmsMessageKind.Received;
@@ -402,7 +402,7 @@ class SmsUpdater {
     var map = Map();
     map['messageId'] = msg.id;
 
-    print('Trying to update ${msg.id}');
+    // print('Trying to update ${msg.id}');
     await _channel.invokeMethod("updateSMS", map);
   }
 }

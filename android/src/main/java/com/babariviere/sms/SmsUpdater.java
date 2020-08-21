@@ -35,27 +35,23 @@ class SmsUpdater implements RequestPermissionsResultListener {
     MethodChannel.Result result,
     String messageId
   ) {
-    Log.i("TOTO", "A");
     this.registrar = registrar;
     this.result = result;
     this.messageId = messageId;
   }
 
   void handleMarkMessageRead(Permissions permissions) {
-    Log.i("TOTO", "B");
     if (
       permissions.checkAndRequestPermission(
         permissionsList,
         Permissions.SEND_SMS_ID_REQ
       )
     ) {
-      Log.i("TOTO", "C");
       markMessageRead();
     }
   }
 
   private void markMessageRead() {
-    Log.i("TOTO", "D");
     try {
       ContentValues values = new ContentValues();
       values.put("read", true);
