@@ -1,24 +1,20 @@
 package com.babariviere.sms;
 
+import static io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import static io.flutter.plugin.common.MethodChannel.Result;
+import static io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
+
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-
 import com.babariviere.sms.permisions.Permissions;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
-
-import static io.flutter.plugin.common.MethodChannel.MethodCallHandler;
-import static io.flutter.plugin.common.MethodChannel.Result;
-import static io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
+import java.util.ArrayList;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by babariviere on 09/03/18.
@@ -28,7 +24,6 @@ enum SmsQueryRequest {
   Inbox,
   Sent,
   Draft;
-
 
   Uri toUri() {
     if (this == Inbox) {
@@ -43,7 +38,9 @@ enum SmsQueryRequest {
 
 class SmsQueryHandler implements RequestPermissionsResultListener {
   private final PluginRegistry.Registrar registrar;
-  private final String[] permissionsList = new String[]{Manifest.permission.READ_SMS};
+  private final String[] permissionsList = new String[] {
+    Manifest.permission.READ_SMS,
+  };
   private MethodChannel.Result result;
   private SmsQueryRequest request;
   private int start = 0;
@@ -51,8 +48,15 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
   private int threadId = -1;
   private String address = null;
 
-  SmsQueryHandler(PluginRegistry.Registrar registrar, MethodChannel.Result result, SmsQueryRequest request,
-                  int start, int count, int threadId, String address) {
+  SmsQueryHandler(
+    PluginRegistry.Registrar registrar,
+    MethodChannel.Result result,
+    SmsQueryRequest request,
+    int start,
+    int count,
+    int threadId,
+    String address
+  ) {
     this.registrar = registrar;
     this.result = result;
     this.request = request;
@@ -63,7 +67,12 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
   }
 
   void handle(Permissions permissions) {
-    if (permissions.checkAndRequestPermission(permissionsList, Permissions.SEND_SMS_ID_REQ)) {
+    if (
+      permissions.checkAndRequestPermission(
+        permissionsList,
+        Permissions.SEND_SMS_ID_REQ
+      )
+    ) {
       querySms();
     }
   }
@@ -72,13 +81,17 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
     JSONObject res = new JSONObject();
     for (int idx = 0; idx < cursor.getColumnCount(); idx++) {
       try {
-        if (cursor.getColumnName(idx).equals("address") || cursor.getColumnName(idx).equals("body")) {
+        if (
+          cursor.getColumnName(idx).equals("address") ||
+          cursor.getColumnName(idx).equals("body")
+        ) {
           res.put(cursor.getColumnName(idx), cursor.getString(idx));
-        }
-        else if (cursor.getColumnName(idx).equals("date") || cursor.getColumnName(idx).equals("date_sent")) {
+        } else if (
+          cursor.getColumnName(idx).equals("date") ||
+          cursor.getColumnName(idx).equals("date_sent")
+        ) {
           res.put(cursor.getColumnName(idx), cursor.getLong(idx));
-        }
-        else {
+        } else {
           res.put(cursor.getColumnName(idx), cursor.getInt(idx));
         }
       } catch (JSONException e) {
@@ -90,7 +103,19 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
 
   private void querySms() {
     ArrayList<JSONObject> list = new ArrayList<>();
-    Cursor cursor = registrar.context().getContentResolver().query(this.request.toUri(), null, null, null, null);
+    String[] projection = new String[] {
+      "_id",
+      "thread_id",
+      "address",
+      "body",
+      "date",
+      "date_sent",
+      "read",
+    };
+    Cursor cursor = registrar
+      .context()
+      .getContentResolver()
+      .query(this.request.toUri(), projection, null, null, "date desc");
     if (cursor == null) {
       result.error("#01", "permission denied", null);
       return;
@@ -126,7 +151,11 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
   }
 
   @Override
-  public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+  public boolean onRequestPermissionsResult(
+    int requestCode,
+    String[] permissions,
+    int[] grantResults
+  ) {
     if (requestCode != Permissions.READ_SMS_ID_REQ) {
       return false;
     }
@@ -149,7 +178,6 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
 class SmsQuery implements MethodCallHandler {
   private final PluginRegistry.Registrar registrar;
   private final Permissions permissions;
-
 
   SmsQuery(PluginRegistry.Registrar registrar) {
     this.registrar = registrar;
@@ -189,9 +217,16 @@ class SmsQuery implements MethodCallHandler {
     if (call.hasArgument("address")) {
       address = call.argument("address");
     }
-    SmsQueryHandler handler = new SmsQueryHandler(registrar, result, request, start, count, threadId, address);
+    SmsQueryHandler handler = new SmsQueryHandler(
+      registrar,
+      result,
+      request,
+      start,
+      count,
+      threadId,
+      address
+    );
     this.registrar.addRequestPermissionsResultListener(handler);
     handler.handle(permissions);
   }
-
 }
