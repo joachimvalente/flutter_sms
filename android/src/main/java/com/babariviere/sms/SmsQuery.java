@@ -8,10 +8,15 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 import com.babariviere.sms.permisions.Permissions;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -99,6 +104,158 @@ class SmsQueryHandler implements RequestPermissionsResultListener {
       }
     }
     return res;
+  }
+
+  private JSONObject readMms(Cursor cursor) {
+    JSONObject res = new JSONObject();
+    final Long mmsId = cursor.getLong(cursor.getColumnIndex("_id"));
+    for (int idx = 0; idx < cursor.getColumnCount(); idx++) {
+      try {
+        if (
+          cursor.getColumnName(idx).equals("address") ||
+          cursor.getColumnName(idx).equals("body")
+        ) {
+          res.put(cursor.getColumnName(idx), cursor.getString(idx));
+        } else if (
+          cursor.getColumnName(idx).equals("date") ||
+          cursor.getColumnName(idx).equals("date_sent")
+        ) {
+          res.put(cursor.getColumnName(idx), cursor.getLong(idx));
+        } else {
+          res.put(cursor.getColumnName(idx), cursor.getInt(idx));
+        }
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+    }
+
+    Uri uri = Uri.parse("content://mms/part");
+    String selection = "mid=" + mmsId;
+    Cursor cursor2 = registrar
+      .context()
+      .getContentResolver()
+      .query(uri, null, selection, null, null);
+    if (cursor2.moveToFirst()) {
+      do {
+        String partId = cursor2.getString(cursor2.getColumnIndex("_id"));
+        String type = cursor2.getString(cursor2.getColumnIndex("ct"));
+        if ("text/plain".equals(type)) {
+          String data = cursor2.getString(cursor2.getColumnIndex("_data"));
+          if (data != null) {
+            // implementation of this method below
+            try {
+              res.put("body", getMmsText(partId));
+            } catch (JSONException e) {}
+          } else {
+            try {
+              res.put(
+                "body",
+                cursor2.getString(cursor2.getColumnIndex("text"))
+              );
+            } catch (JSONException e) {}
+          }
+        }
+      } while (cursor2.moveToNext());
+    }
+
+    return res;
+  }
+
+  private String getMmsText(String id) {
+    Uri partURI = Uri.parse("content://mms/part/" + id);
+    InputStream is = null;
+    StringBuilder sb = new StringBuilder();
+    try {
+      is = registrar.context().getContentResolver().openInputStream(partURI);
+      if (is != null) {
+        InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+        BufferedReader reader = new BufferedReader(isr);
+        String temp = reader.readLine();
+        while (temp != null) {
+          sb.append(temp);
+          temp = reader.readLine();
+        }
+      }
+    } catch (IOException e) {} finally {
+      if (is != null) {
+        try {
+          is.close();
+        } catch (IOException e) {}
+      }
+    }
+    return sb.toString();
+  }
+
+  private void querySmsMms() {
+    Log.i("TOTO", "HELLOOOOOO");
+    ArrayList<JSONObject> list = new ArrayList<>();
+    String[] projection = new String[] {
+      "_id",
+      "thread_id",
+      "address",
+      "body",
+      "date",
+      "date_sent",
+      "read",
+      "ct_t",
+    };
+    Cursor cursor = registrar
+      .context()
+      .getContentResolver()
+      .query(
+        Uri.parse("content://mms-sms/conversations/"),
+        projection,
+        null,
+        null,
+        "date desc"
+      );
+    if (cursor == null) {
+      result.error("#01", "permission denied", null);
+      return;
+    }
+    if (!cursor.moveToFirst()) {
+      cursor.close();
+      result.success(list);
+      return;
+    }
+    int smsCount = 0;
+    int mmsCount = 0;
+    do {
+      String string = cursor.getString(cursor.getColumnIndex("ct_t"));
+      JSONObject obj;
+      if ("application/vnd.wap.multipart.related".equals(string)) {
+        mmsCount++;
+        obj = readMms(cursor);
+      } else {
+        smsCount++;
+        obj = readSms(cursor);
+      }
+      try {
+        if (threadId >= 0 && obj.getInt("thread_id") != threadId) {
+          continue;
+        }
+        if (
+          address != null &&
+          (obj.isNull("address") || !obj.getString("address").equals(address))
+        ) {
+          continue;
+        }
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+      if (start > 0) {
+        start--;
+        continue;
+      }
+      list.add(obj);
+      if (count > 0) {
+        count--;
+      }
+    } while (cursor.moveToNext() && count != 0);
+    Log.i("TOTO", "SMS count = " + smsCount);
+    Log.i("TOTO", "MMS count = " + mmsCount);
+    cursor.close();
+    result.success(list);
   }
 
   private void querySms() {
